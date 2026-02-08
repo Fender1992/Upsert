@@ -1,4 +1,21 @@
+pub mod audit;
+pub mod credentials;
+pub mod profiles;
+pub mod validation;
+
 use serde::{Deserialize, Serialize};
+
+// Re-export key types and functions for convenient access
+pub use audit::{AuditError, AuditFilter, AuditLogger};
+pub use credentials::{
+    build_connection_config, credential_key_for_profile, CredentialEntry, CredentialError,
+    CredentialStore, InMemoryCredentialStore,
+};
+pub use profiles::{ProfileError, ProfileStore};
+pub use validation::{
+    sanitize_for_display, validate_connection_string, validate_input, validate_table_name,
+    ValidationError,
+};
 
 /// Audit log entry
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -31,7 +48,9 @@ pub enum AuditAction {
     SettingsChanged,
 }
 
-/// Connection profile with encrypted credentials reference
+/// Connection profile with encrypted credentials reference.
+/// Note: This struct intentionally has NO password field.
+/// Passwords are stored in Stronghold and referenced via `credential_key`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConnectionProfile {
     pub id: String,
@@ -46,15 +65,4 @@ pub struct ConnectionProfile {
     pub read_only: bool,
     pub created_at: String,
     pub updated_at: String,
-}
-
-/// Validate IPC command input
-pub fn validate_input(input: &str, max_length: usize) -> Result<(), String> {
-    if input.len() > max_length {
-        return Err(format!("Input exceeds maximum length of {}", max_length));
-    }
-    if input.contains('\0') {
-        return Err("Input contains null bytes".to_string());
-    }
-    Ok(())
 }

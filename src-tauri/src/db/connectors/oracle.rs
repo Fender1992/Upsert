@@ -3,19 +3,18 @@ use crate::db::schema::{Row, SchemaInfo, TableInfo};
 use async_trait::async_trait;
 
 /// Oracle connector - STUB IMPLEMENTATION
-/// Oracle Instant Client is not available. All methods have todo!() bodies.
-/// The interface is defined to match the DatabaseConnector trait.
+/// Oracle Instant Client is not available in this environment.
+/// All database methods have todo!() bodies.
+/// The interface is defined to match the DatabaseConnector trait so the
+/// project compiles and Oracle can be added later.
 pub struct OracleConnector {
+    #[allow(dead_code)]
     config: ConnectionConfig,
-    connected: bool,
 }
 
 impl OracleConnector {
     pub fn new(config: ConnectionConfig) -> Self {
-        Self {
-            config,
-            connected: false,
-        }
+        Self { config }
     }
 }
 
@@ -76,5 +75,32 @@ impl DatabaseConnector for OracleConnector {
 
     async fn get_row_count(&self, _table_name: &str) -> anyhow::Result<i64> {
         todo!("Oracle get_row_count - requires Oracle Instant Client")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_connector() {
+        let config = ConnectionConfig {
+            engine: DatabaseEngine::Oracle,
+            host: Some("localhost".to_string()),
+            port: Some(1521),
+            ..Default::default()
+        };
+        let connector = OracleConnector::new(config);
+        assert_eq!(connector.engine(), DatabaseEngine::Oracle);
+    }
+
+    #[tokio::test]
+    async fn test_not_connected() {
+        let config = ConnectionConfig {
+            engine: DatabaseEngine::Oracle,
+            ..Default::default()
+        };
+        let connector = OracleConnector::new(config);
+        assert!(!connector.is_connected().await);
     }
 }
