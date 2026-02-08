@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(where:*)",
+      "Bash(cargo --version:*)",
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "Bash(pnpm --version:*)",
+      "Bash(rustc:*)",
+      "Bash(npx:*)",
+      "Bash(dir:*)",
+      "WebSearch",
+      "WebFetch(domain:v2.tauri.app)",
+      "WebFetch(domain:specta.dev)",
+      "WebFetch(domain:github.com)",
+      "Bash(winget install:*)",
+      "Bash(export PATH=\"$HOME/.cargo/bin:$PATH:/c/Users/rolan/.cargo/bin\")",
+      "Bash(rustup default:*)",
+      "Bash(export PATH=\"$HOME/.cargo/bin:$PATH\")",
+      "Bash(cargo check:*)",
+      "Bash(winget search:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(export MSVC_BIN=\"/c/Program Files \\(x86\\)/Microsoft Visual Studio/18/BuildTools/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64\":*)",
+      "Bash(export SDK_BIN=\"/c/Program Files \\(x86\\)/Windows Kits/10/bin/10.0.26100.0/x64\")",
+      "Bash(export PATH=\"$MSVC_BIN:$SDK_BIN:$HOME/.cargo/bin:$PATH\")",
+      "Bash(MSVC_BIN=\"/c/Program Files \\(x86\\)/Microsoft Visual Studio/18/BuildTools/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64\")",
+      "Bash(SDK_BIN=\"/c/Program Files \\(x86\\)/Windows Kits/10/bin/10.0.26100.0/x64\")",
+      "Bash(cargo test:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial Tauri 2 + React 18 scaffold with all dependencies\n\n- Tauri 2.x backend with Rust: tiberius, tokio-postgres, mysql_async,\n  rusqlite, mongodb, tauri-specta, stronghold\n- React 18 frontend with TypeScript, Tailwind CSS v4, Zustand,\n  TanStack Virtual/Table\n- DatabaseConnector trait with 7 engine implementations \\(Oracle stubbed\\)\n- Engine-agnostic schema types, bidirectional type mapping matrix\n- Zustand stores: connection, comparison, migration, ui, settings\n- Security module with audit logging and credential encryption\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")"
+    ]
+  }
+}
