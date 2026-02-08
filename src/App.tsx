@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useUiStore } from "./stores/uiStore";
 import ConnectionSidebar from "./components/connections/ConnectionSidebar";
 import ConnectionDialog from "./components/connections/ConnectionDialog";
+import MigrationWizard from "./components/migration/MigrationWizard";
 import TabBar from "./components/shared/TabBar";
 import BottomPanel from "./components/shared/BottomPanel";
 import CommandPalette from "./components/shared/CommandPalette";
@@ -78,6 +79,7 @@ function App() {
   const { tabs, activeTabId } = useUiStore();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editConnectionId, setEditConnectionId] = useState<string | null>(null);
+  const [migrationWizardOpen, setMigrationWizardOpen] = useState(false);
 
   const handleNewConnection = useCallback(() => {
     setEditConnectionId(null);
@@ -112,7 +114,11 @@ function App() {
 
           {/* Tab content */}
           <div className="flex flex-1 items-center justify-center overflow-auto">
-            {activeTab ? (
+            {migrationWizardOpen ? (
+              <div className="h-full w-full">
+                <MigrationWizard onClose={() => setMigrationWizardOpen(false)} />
+              </div>
+            ) : activeTab ? (
               <div className="text-sm text-neutral-500">
                 {activeTab.type}: {activeTab.title}
               </div>
@@ -124,6 +130,12 @@ function App() {
                 <p className="mt-1 text-xs text-neutral-400 dark:text-neutral-600">
                   Open a connection or create a new tab to get started.
                 </p>
+                <button
+                  onClick={() => setMigrationWizardOpen(true)}
+                  className="mt-4 rounded bg-blue-600 px-4 py-2 text-xs font-medium text-white hover:bg-blue-700"
+                >
+                  New Migration
+                </button>
               </div>
             )}
           </div>
