@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useUiStore } from "./stores/uiStore";
+import { useSettingsStore } from "./stores/settingsStore";
 import ConnectionSidebar from "./components/connections/ConnectionSidebar";
 import ConnectionDialog from "./components/connections/ConnectionDialog";
 import MigrationWizard from "./components/migration/MigrationWizard";
@@ -7,6 +8,9 @@ import TabBar from "./components/shared/TabBar";
 import BottomPanel from "./components/shared/BottomPanel";
 import CommandPalette from "./components/shared/CommandPalette";
 import StatusBar from "./components/shared/StatusBar";
+import OnboardingWizard from "./components/onboarding/OnboardingWizard";
+import JobList from "./components/jobs/JobList";
+import Dashboard from "./components/jobs/Dashboard";
 
 function useThemeSync() {
   const theme = useUiStore((s) => s.theme);
@@ -77,9 +81,12 @@ function App() {
   useGlobalShortcuts();
 
   const { tabs, activeTabId } = useUiStore();
+  const hasCompletedOnboarding = useSettingsStore((s) => s.hasCompletedOnboarding);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editConnectionId, setEditConnectionId] = useState<string | null>(null);
   const [migrationWizardOpen, setMigrationWizardOpen] = useState(false);
+  const [dashboardOpen, setDashboardOpen] = useState(false);
+  const [jobListOpen, setJobListOpen] = useState(false);
 
   const handleNewConnection = useCallback(() => {
     setEditConnectionId(null);
@@ -97,6 +104,10 @@ function App() {
   }, []);
 
   const activeTab = tabs.find((t) => t.id === activeTabId);
+
+  if (!hasCompletedOnboarding) {
+    return <OnboardingWizard />;
+  }
 
   return (
     <div className="flex h-screen w-screen flex-col bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100">
@@ -118,24 +129,63 @@ function App() {
               <div className="h-full w-full">
                 <MigrationWizard onClose={() => setMigrationWizardOpen(false)} />
               </div>
+            ) : jobListOpen ? (
+              <div className="h-full w-full">
+                <JobList onClose={() => setJobListOpen(false)} />
+              </div>
+            ) : dashboardOpen ? (
+              <div className="h-full w-full">
+                <Dashboard
+                  jobs={[]}
+                  onNewJob={() => {
+                    setDashboardOpen(false);
+                    setJobListOpen(true);
+                  }}
+                  onNewMigration={() => {
+                    setDashboardOpen(false);
+                    setMigrationWizardOpen(true);
+                  }}
+                  onNewComparison={() => {
+                    setDashboardOpen(false);
+                  }}
+                />
+              </div>
             ) : activeTab ? (
               <div className="text-sm text-neutral-500">
                 {activeTab.type}: {activeTab.title}
               </div>
             ) : (
               <div className="text-center">
-                <h1 className="text-xl font-bold text-neutral-400 dark:text-neutral-600">
-                  Upsert
-                </h1>
-                <p className="mt-1 text-xs text-neutral-400 dark:text-neutral-600">
-                  Open a connection or create a new tab to get started.
-                </p>
                 <button
-                  onClick={() => setMigrationWizardOpen(true)}
-                  className="mt-4 rounded bg-blue-600 px-4 py-2 text-xs font-medium text-white hover:bg-blue-700"
+                  onClick={() => setDashboardOpen(true)}
+                  className="text-xl font-bold text-neutral-400 hover:text-blue-500 dark:text-neutral-600 dark:hover:text-blue-400"
+                  title="Open Dashboard"
                 >
-                  New Migration
+                  Upsert
                 </button>
+                <p className="mt-1 text-xs text-neutral-400 dark:text-neutral-600">
+                  Click the title to open the Dashboard, or get started below.
+                </p>
+                <div className="mt-4 flex justify-center gap-2">
+                  <button
+                    onClick={() => setMigrationWizardOpen(true)}
+                    className="rounded bg-blue-600 px-4 py-2 text-xs font-medium text-white hover:bg-blue-700"
+                  >
+                    New Migration
+                  </button>
+                  <button
+                    onClick={() => setJobListOpen(true)}
+                    className="rounded border border-neutral-300 px-4 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-100 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                  >
+                    Jobs
+                  </button>
+                  <button
+                    onClick={() => setDashboardOpen(true)}
+                    className="rounded border border-neutral-300 px-4 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-100 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                  >
+                    Dashboard
+                  </button>
+                </div>
               </div>
             )}
           </div>
