@@ -11,6 +11,7 @@ import StatusBar from "./components/shared/StatusBar";
 import OnboardingWizard from "./components/onboarding/OnboardingWizard";
 import JobList from "./components/jobs/JobList";
 import Dashboard from "./components/jobs/Dashboard";
+import AppTour from "./components/tour/AppTour";
 
 function useThemeSync() {
   const theme = useUiStore((s) => s.theme);
@@ -124,7 +125,7 @@ function App() {
           <TabBar />
 
           {/* Tab content */}
-          <div className="flex flex-1 items-center justify-center overflow-auto">
+          <div data-tour="main-content" className="flex flex-1 items-center justify-center overflow-auto">
             {migrationWizardOpen ? (
               <div className="h-full w-full">
                 <MigrationWizard onClose={() => setMigrationWizardOpen(false)} />
@@ -168,18 +169,21 @@ function App() {
                 </p>
                 <div className="mt-4 flex justify-center gap-2">
                   <button
+                    data-tour="new-migration-btn"
                     onClick={() => setMigrationWizardOpen(true)}
                     className="rounded bg-blue-600 px-4 py-2 text-xs font-medium text-white hover:bg-blue-700"
                   >
                     New Migration
                   </button>
                   <button
+                    data-tour="jobs-btn"
                     onClick={() => setJobListOpen(true)}
                     className="rounded border border-neutral-300 px-4 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-100 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-700"
                   >
                     Jobs
                   </button>
                   <button
+                    data-tour="dashboard-btn"
                     onClick={() => setDashboardOpen(true)}
                     className="rounded border border-neutral-300 px-4 py-2 text-xs font-medium text-neutral-700 hover:bg-neutral-100 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-700"
                   >
@@ -200,6 +204,9 @@ function App() {
 
       {/* Command palette overlay */}
       <CommandPalette />
+
+      {/* Guided tour overlay */}
+      <AppTour />
 
       {/* Connection dialog */}
       {dialogOpen && (

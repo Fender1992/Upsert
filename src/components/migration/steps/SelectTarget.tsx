@@ -4,6 +4,11 @@ import {
   type ConnectionProfile,
 } from "../../../stores/connectionStore";
 import { useMigrationStore } from "../../../stores/migrationStore";
+import {
+  testConnection,
+  connectDatabase,
+  type ConnectionConfigDto,
+} from "../../../lib/tauriCommands";
 
 const statusColors: Record<ConnectionProfile["status"], string> = {
   connected: "bg-green-500",
@@ -19,6 +24,19 @@ const statusLabels: Record<ConnectionProfile["status"], string> = {
   error: "Error",
 };
 
+function buildConfigDto(conn: ConnectionProfile): ConnectionConfigDto {
+  return {
+    engine: conn.engine,
+    host: conn.host,
+    port: conn.port,
+    database: conn.database,
+    username: conn.username,
+    password: conn.password,
+    filePath: conn.filePath,
+    readOnly: conn.readOnly,
+  };
+}
+
 export default function SelectTarget() {
   const { connections, setConnectionStatus } = useConnectionStore();
   const { targetConnectionId, setTargetConnection, sourceConnectionId } =
@@ -27,13 +45,24 @@ export default function SelectTarget() {
 
   const handleTestConnection = useCallback(
     async (id: string) => {
+      const conn = connections.find((c) => c.id === id);
+      if (!conn) return;
+
       setTestingId(id);
       setConnectionStatus(id, "connecting");
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-      setConnectionStatus(id, "connected");
-      setTestingId(null);
+
+      try {
+        const config = buildConfigDto(conn);
+        await testConnection(config);
+        await connectDatabase(id, config);
+        setConnectionStatus(id, "connected");
+      } catch (err) {
+        setConnectionStatus(id, "error", String(err));
+      } finally {
+        setTestingId(null);
+      }
     },
-    [setConnectionStatus],
+    [connections, setConnectionStatus],
   );
 
   const sameConnectionWarning =

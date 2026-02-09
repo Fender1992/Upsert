@@ -46,6 +46,7 @@ export default function BottomPanel() {
 
   return (
     <div
+      data-tour="bottom-panel"
       className="flex flex-col border-t border-neutral-300 bg-white dark:border-neutral-700 dark:bg-neutral-900"
       style={{ height: bottomPanelHeight }}
     >

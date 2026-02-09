@@ -4,6 +4,11 @@ import {
   type DryRunResult,
 } from "../../../stores/migrationStore";
 import { useConnectionStore } from "../../../stores/connectionStore";
+import {
+  dryRun as dryRunCommand,
+  type DryRunRequest,
+  type TableMappingDto,
+} from "../../../lib/tauriCommands";
 
 export default function DryRun() {
   const {
@@ -25,6 +30,7 @@ export default function DryRun() {
   );
 
   const [isRunning, setIsRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const totalEstimatedRows = includedTables.reduce(
     (sum, m) => sum + m.estimatedRows,
@@ -33,50 +39,82 @@ export default function DryRun() {
   const rulesCount = transformRules.length;
 
   const handleRunDryRun = useCallback(async () => {
+    if (!sourceConnectionId || !targetConnectionId) return;
+
     setIsRunning(true);
+    setError(null);
     setStatus("dry-run");
 
-    // Simulate dry run
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      // Get key columns from the window global set by MapTables
+      const keyColumnsMap: Record<string, string[]> =
+        (window as any).__upsert_key_columns ?? {};
 
-    const result: DryRunResult = {
-      tableSummaries: includedTables.map((t) => {
-        const rows = t.estimatedRows;
-        const inserts = Math.floor(rows * 0.6);
-        const updates = Math.floor(rows * 0.3);
-        const deletes = config.mode === "Mirror" ? Math.floor(rows * 0.05) : 0;
-        const skips = rows - inserts - updates - deletes;
-        return {
-          tableId: t.id,
-          tableName: t.sourceTable,
-          estimatedRows: rows,
-          estimatedInserts: inserts,
-          estimatedUpdates: updates,
-          estimatedDeletes: deletes,
-          estimatedSkips: skips,
-        };
-      }),
-      warnings: [
-        includedTables.length > 5
-          ? `Large migration: ${includedTables.length} tables selected`
-          : "",
-        totalEstimatedRows > 10000
-          ? `High row count: ${totalEstimatedRows.toLocaleString()} estimated rows`
-          : "",
-        config.transactionMode === "None"
-          ? "No transaction wrapping -- partial failures cannot be rolled back"
-          : "",
-        sourceConnectionId === targetConnectionId
-          ? "Source and target are the same connection"
-          : "",
-      ].filter(Boolean),
-      errors: [],
-      totalEstimatedTime: Math.ceil(totalEstimatedRows / config.batchSize) * 50,
-    };
+      const tables: TableMappingDto[] = includedTables.map((t) => ({
+        sourceTable: t.sourceTable,
+        targetTable: t.targetTable,
+        keyColumns: keyColumnsMap[t.sourceTable] ?? ["id"],
+      }));
 
-    setDryRunResult(result);
-    setStatus("configuring");
-    setIsRunning(false);
+      const request: DryRunRequest = {
+        sourceConnectionId,
+        targetConnectionId,
+        tables,
+        config: {
+          mode: config.mode,
+          conflictResolution: config.conflictResolution,
+          batchSize: config.batchSize,
+        },
+      };
+
+      const results = await dryRunCommand(request);
+
+      // Collect backend schema warnings from each table result
+      const backendWarnings: string[] = results.flatMap((r) =>
+        (r.warnings ?? []).map((w) => `[${r.targetTable}] ${w}`),
+      );
+
+      const result: DryRunResult = {
+        tableSummaries: results.map((r) => {
+          const mapping = includedTables.find(
+            (m) => m.sourceTable === r.sourceTable,
+          );
+          return {
+            tableId: mapping?.id ?? "",
+            tableName: r.sourceTable,
+            estimatedRows: r.sourceRows,
+            estimatedInserts: r.inserts,
+            estimatedUpdates: r.updates,
+            estimatedDeletes: r.deletes,
+            estimatedSkips: r.skips,
+          };
+        }),
+        warnings: [
+          ...backendWarnings,
+          includedTables.length > 5
+            ? `Large migration: ${includedTables.length} tables selected`
+            : "",
+          totalEstimatedRows > 10000
+            ? `High row count: ${totalEstimatedRows.toLocaleString()} estimated rows`
+            : "",
+          config.transactionMode === "None"
+            ? "No transaction wrapping -- partial failures cannot be rolled back"
+            : "",
+          sourceConnectionId === targetConnectionId
+            ? "Source and target are the same connection"
+            : "",
+        ].filter(Boolean),
+        errors: [],
+        totalEstimatedTime: Math.ceil(totalEstimatedRows / config.batchSize) * 50,
+      };
+
+      setDryRunResult(result);
+    } catch (err) {
+      setError(String(err));
+    } finally {
+      setStatus("configuring");
+      setIsRunning(false);
+    }
   }, [
     includedTables,
     config,
@@ -247,6 +285,25 @@ export default function DryRun() {
       )}
 
       {/* Errors */}
+      {error && (
+        <div className="flex items-start gap-2 rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-800 dark:bg-red-950/20 dark:text-red-400">
+          <svg
+            className="mt-0.5 h-3.5 w-3.5 shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
+            />
+          </svg>
+          {error}
+        </div>
+      )}
+
       {dryRunResult && dryRunResult.errors.length > 0 && (
         <div className="space-y-1">
           <h4 className="text-xs font-semibold text-red-600 dark:text-red-400">

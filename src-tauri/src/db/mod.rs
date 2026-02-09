@@ -2,6 +2,8 @@ pub mod comparator;
 pub mod connectors;
 pub mod data_comparator;
 pub mod migrator;
+pub mod registry;
 pub mod schema;
+pub mod sql_generator;
 pub mod transformer;
 pub mod type_mapper;

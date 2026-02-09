@@ -1,34 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   useMigrationStore,
   type TransformRule,
   type TransformRuleType,
 } from "../../../stores/migrationStore";
-
-// Simulated column data -- in production fetched from the backend
-const DEMO_COLUMNS: Record<string, Array<{ name: string; type: string }>> = {
-  users: [
-    { name: "id", type: "int" },
-    { name: "name", type: "varchar(255)" },
-    { name: "email", type: "varchar(255)" },
-    { name: "created_at", type: "datetime" },
-    { name: "is_active", type: "bit" },
-  ],
-  orders: [
-    { name: "id", type: "int" },
-    { name: "user_id", type: "int" },
-    { name: "total", type: "decimal(10,2)" },
-    { name: "status", type: "varchar(50)" },
-    { name: "order_date", type: "datetime" },
-  ],
-  products: [
-    { name: "id", type: "int" },
-    { name: "name", type: "varchar(255)" },
-    { name: "price", type: "decimal(10,2)" },
-    { name: "category_id", type: "int" },
-    { name: "sku", type: "varchar(50)" },
-  ],
-};
+import { getTableInfo } from "../../../lib/tauriCommands";
 
 const ruleTypeLabels: Record<TransformRuleType, string> = {
   rename: "Rename Column",
@@ -56,6 +32,7 @@ export default function TransformStep() {
     addTransformRule,
     removeTransformRule,
     reorderTransformRule,
+    sourceConnectionId,
   } = useMigrationStore();
 
   const includedTables = tableMappings.filter((m) => m.included && m.targetTable);
@@ -70,12 +47,44 @@ export default function TransformStep() {
   const [newTargetCol, setNewTargetCol] = useState("");
   const [newConfigValue, setNewConfigValue] = useState("");
 
+  // Real column data from backend
+  const [columns, setColumns] = useState<Array<{ name: string; type: string }>>([]);
+  const [loadingColumns, setLoadingColumns] = useState(false);
+
   const selectedTable = includedTables.find((t) => t.id === selectedTableId);
 
-  const columns = useMemo(() => {
-    if (!selectedTable) return [];
-    return DEMO_COLUMNS[selectedTable.sourceTable] ?? [];
-  }, [selectedTable]);
+  // Fetch real column info when selected table changes
+  useEffect(() => {
+    if (!selectedTable || !sourceConnectionId) {
+      setColumns([]);
+      return;
+    }
+
+    let cancelled = false;
+    setLoadingColumns(true);
+
+    (async () => {
+      try {
+        const info = await getTableInfo(sourceConnectionId, selectedTable.sourceTable);
+        if (!cancelled) {
+          setColumns(
+            info.columns.map((c) => ({
+              name: c.name,
+              type: c.dataType,
+            })),
+          );
+        }
+      } catch {
+        if (!cancelled) setColumns([]);
+      } finally {
+        if (!cancelled) setLoadingColumns(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedTable?.id, sourceConnectionId]);
 
   const tableRules = useMemo(
     () =>
@@ -183,26 +192,31 @@ export default function TransformStep() {
           <div className="flex-1">Target Column</div>
         </div>
         <div className="max-h-[200px] overflow-y-auto">
-          {columns.map((col) => (
-            <div
-              key={col.name}
-              className="flex items-center border-b border-neutral-100 px-4 py-1.5 text-xs last:border-b-0 dark:border-neutral-800"
-            >
-              <div className="flex-1 font-mono text-neutral-700 dark:text-neutral-300">
-                {col.name}
-              </div>
-              <div className="w-32 text-center font-mono text-[11px] text-neutral-400 dark:text-neutral-500">
-                {col.type}
-              </div>
-              <div className="w-8 text-center text-neutral-300 dark:text-neutral-600">
-                -&gt;
-              </div>
-              <div className="flex-1 font-mono text-neutral-700 dark:text-neutral-300">
-                {col.name}
-              </div>
+          {loadingColumns ? (
+            <div className="px-4 py-4 text-center text-xs text-neutral-400">
+              Loading columns...
             </div>
-          ))}
-          {columns.length === 0 && (
+          ) : columns.length > 0 ? (
+            columns.map((col) => (
+              <div
+                key={col.name}
+                className="flex items-center border-b border-neutral-100 px-4 py-1.5 text-xs last:border-b-0 dark:border-neutral-800"
+              >
+                <div className="flex-1 font-mono text-neutral-700 dark:text-neutral-300">
+                  {col.name}
+                </div>
+                <div className="w-32 text-center font-mono text-[11px] text-neutral-400 dark:text-neutral-500">
+                  {col.type}
+                </div>
+                <div className="w-8 text-center text-neutral-300 dark:text-neutral-600">
+                  -&gt;
+                </div>
+                <div className="flex-1 font-mono text-neutral-700 dark:text-neutral-300">
+                  {col.name}
+                </div>
+              </div>
+            ))
+          ) : (
             <div className="px-4 py-4 text-center text-xs text-neutral-400">
               No column info available for this table.
             </div>

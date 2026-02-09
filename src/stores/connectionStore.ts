@@ -17,6 +17,7 @@ export interface ConnectionProfile {
   port?: number;
   database?: string;
   username?: string;
+  password?: string;
   filePath?: string;
   readOnly: boolean;
   status: "disconnected" | "connecting" | "connected" | "error";

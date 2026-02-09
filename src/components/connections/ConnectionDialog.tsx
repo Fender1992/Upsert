@@ -88,6 +88,7 @@ export default function ConnectionDialog({ editId, onClose }: Props) {
       port: isSqlite ? undefined : (port as number),
       database: database.trim() || undefined,
       username: username.trim() || undefined,
+      password: password || undefined,
       filePath: isSqlite ? filePath.trim() : undefined,
       readOnly,
     };

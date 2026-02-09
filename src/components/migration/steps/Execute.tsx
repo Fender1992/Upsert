@@ -1,6 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useMigrationStore } from "../../../stores/migrationStore";
 import { useUiStore } from "../../../stores/uiStore";
+import { listen } from "@tauri-apps/api/event";
+import {
+  executeMigration,
+  cancelMigration,
+  type DryRunRequest,
+  type TableMappingDto,
+  type MigrationProgressEvent,
+  type MigrationResultDto,
+} from "../../../lib/tauriCommands";
 
 export default function Execute() {
   const {
@@ -8,7 +17,7 @@ export default function Execute() {
     progress,
     tableProgress,
     startMigration,
-    cancelMigration,
+    cancelMigration: storeCancelMigration,
     setStatus,
     setProgress,
     updateTableProgress,
@@ -16,12 +25,14 @@ export default function Execute() {
     elapsedMs,
     config,
     tableMappings,
+    sourceConnectionId,
+    targetConnectionId,
   } = useMigrationStore();
   const { appendLog, addNotification } = useUiStore();
 
   const [showErrors, setShowErrors] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const simulationRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const migrationIdRef = useRef<string>("");
 
   const isRunning = status === "running";
   const isCompleted = status === "completed";
@@ -46,102 +57,183 @@ export default function Execute() {
     };
   }, [isRunning, elapsedMs, setElapsedMs]);
 
-  // Simulate migration progress
+  // Listen for migration:progress Tauri events
   useEffect(() => {
-    if (!isRunning || !progress) return;
+    if (!isRunning) return;
 
-    simulationRef.current = setInterval(() => {
-      const currentTableIdx = tableProgress.findIndex(
-        (tp) => tp.status === "running" || tp.status === "pending",
+    const unlisten = listen<MigrationProgressEvent>(
+      "migration:progress",
+      (event) => {
+        const p = event.payload;
+
+        // Update per-table progress
+        const tp = tableProgress.find(
+          (t) => t.tableName === p.table,
+        );
+        if (tp) {
+          updateTableProgress(tp.tableId, {
+            processedRows: p.processedRows,
+            status: p.status === "completed" ? "completed" : "running",
+          });
+        }
+
+        // Update overall progress
+        if (progress) {
+          setProgress({
+            ...progress,
+            processedRows:
+              p.inserted + p.updated + p.deleted + p.skipped,
+            insertedRows: p.inserted,
+            updatedRows: p.updated,
+            deletedRows: p.deleted,
+            skippedRows: p.skipped,
+            errorCount: p.errors,
+          });
+        }
+      },
+    );
+
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, [isRunning, tableProgress, progress, updateTableProgress, setProgress]);
+
+  const handleStart = useCallback(async () => {
+    if (!sourceConnectionId || !targetConnectionId) return;
+
+    startMigration();
+    appendLog("Migration started.");
+
+    const migrationId = crypto.randomUUID();
+    migrationIdRef.current = migrationId;
+
+    // Build the request
+    const keyColumnsMap: Record<string, string[]> =
+      (window as any).__upsert_key_columns ?? {};
+
+    const tables: TableMappingDto[] = includedTables.map((t) => ({
+      sourceTable: t.sourceTable,
+      targetTable: t.targetTable,
+      keyColumns: keyColumnsMap[t.sourceTable] ?? ["id"],
+    }));
+
+    const request: DryRunRequest = {
+      sourceConnectionId,
+      targetConnectionId,
+      tables,
+      config: {
+        mode: config.mode,
+        conflictResolution: config.conflictResolution,
+        batchSize: config.batchSize,
+      },
+    };
+
+    try {
+      const result: MigrationResultDto = await executeMigration(
+        request,
+        migrationId,
       );
 
-      if (currentTableIdx === -1) {
-        // All done
-        if (simulationRef.current) clearInterval(simulationRef.current);
+      // Update final progress
+      setProgress({
+        totalRows: includedTables.reduce(
+          (sum, m) => sum + m.estimatedRows,
+          0,
+        ),
+        processedRows:
+          result.rowsInserted +
+          result.rowsUpdated +
+          result.rowsDeleted +
+          result.rowsSkipped,
+        insertedRows: result.rowsInserted,
+        updatedRows: result.rowsUpdated,
+        deletedRows: result.rowsDeleted,
+        skippedRows: result.rowsSkipped,
+        errorCount: result.errorCount,
+        currentBatch: 0,
+        totalBatches: 0,
+        elapsedMs: result.durationMs,
+      });
+
+      if (result.status === "cancelled") {
+        setStatus("cancelled");
+        appendLog("Migration cancelled.");
+        addNotification({
+          type: "warning",
+          title: "Migration Cancelled",
+          message: "The migration was cancelled by the user.",
+        });
+      } else if (result.errorCount > 0) {
+        setStatus("failed");
+        appendLog(
+          `Migration finished with ${result.errorCount} errors.`,
+        );
+        addNotification({
+          type: "error",
+          title: "Migration Failed",
+          message: `Completed with ${result.errorCount} errors.`,
+        });
+      } else {
         setStatus("completed");
+        appendLog("Migration completed successfully.");
         addNotification({
           type: "success",
           title: "Migration Complete",
-          message: `Successfully migrated ${progress.processedRows.toLocaleString()} rows.`,
-        });
-        appendLog("Migration completed successfully.");
-        return;
-      }
-
-      const currentTable = tableProgress[currentTableIdx];
-
-      if (currentTable.status === "pending") {
-        updateTableProgress(currentTable.tableId, { status: "running" });
-        appendLog(`Migrating table: ${currentTable.tableName}...`);
-        return;
-      }
-
-      // Simulate processing
-      const increment = Math.min(
-        config.batchSize,
-        currentTable.totalRows - currentTable.processedRows,
-      );
-      const newProcessed = currentTable.processedRows + increment;
-
-      if (newProcessed >= currentTable.totalRows) {
-        updateTableProgress(currentTable.tableId, {
-          processedRows: currentTable.totalRows,
-          status: "completed",
-        });
-        appendLog(`Completed table: ${currentTable.tableName}`);
-
-        setProgress({
-          ...progress,
-          processedRows: progress.processedRows + increment,
-          insertedRows: progress.insertedRows + Math.floor(increment * 0.6),
-          updatedRows: progress.updatedRows + Math.floor(increment * 0.3),
-          skippedRows: progress.skippedRows + Math.floor(increment * 0.1),
-        });
-      } else {
-        updateTableProgress(currentTable.tableId, {
-          processedRows: newProcessed,
-        });
-        setProgress({
-          ...progress,
-          processedRows: progress.processedRows + increment,
-          insertedRows: progress.insertedRows + Math.floor(increment * 0.6),
-          updatedRows: progress.updatedRows + Math.floor(increment * 0.3),
-          skippedRows: progress.skippedRows + Math.floor(increment * 0.1),
+          message: `Successfully migrated ${(result.rowsInserted + result.rowsUpdated).toLocaleString()} rows in ${(result.durationMs / 1000).toFixed(1)}s.`,
         });
       }
-    }, 300);
 
-    return () => {
-      if (simulationRef.current) clearInterval(simulationRef.current);
-    };
+      // Mark all table progress as completed
+      for (const tp of tableProgress) {
+        updateTableProgress(tp.tableId, {
+          status:
+            result.status === "cancelled" ? "skipped" : "completed",
+          processedRows: tp.totalRows,
+        });
+      }
+    } catch (err) {
+      setStatus("failed");
+      appendLog(`Migration error: ${err}`);
+      addNotification({
+        type: "error",
+        title: "Migration Error",
+        message: String(err),
+      });
+    }
   }, [
-    isRunning,
-    progress,
-    tableProgress,
-    config.batchSize,
-    setStatus,
+    sourceConnectionId,
+    targetConnectionId,
+    startMigration,
+    includedTables,
+    config,
     setProgress,
-    updateTableProgress,
-    addNotification,
+    setStatus,
     appendLog,
+    addNotification,
+    tableProgress,
+    updateTableProgress,
   ]);
 
-  const handleStart = useCallback(() => {
-    startMigration();
-    appendLog("Migration started.");
-  }, [startMigration, appendLog]);
-
-  const handleCancel = useCallback(() => {
-    cancelMigration();
-    if (simulationRef.current) clearInterval(simulationRef.current);
+  const handleCancel = useCallback(async () => {
+    storeCancelMigration();
     if (timerRef.current) clearInterval(timerRef.current);
+
+    // Tell the backend to cancel
+    if (migrationIdRef.current) {
+      try {
+        await cancelMigration(migrationIdRef.current);
+      } catch {
+        // Already cancelled or completed
+      }
+    }
+
     appendLog("Migration cancelled by user.");
     addNotification({
       type: "warning",
       title: "Migration Cancelled",
       message: "The migration was cancelled by the user.",
     });
-  }, [cancelMigration, appendLog, addNotification]);
+  }, [storeCancelMigration, appendLog, addNotification]);
 
   const formatTime = (ms: number): string => {
     const totalSec = Math.floor(ms / 1000);
@@ -357,17 +449,6 @@ export default function Execute() {
                         (row {err.rowIndex})
                       </span>
                     )}
-                  </div>
-                  <div className="flex shrink-0 gap-1">
-                    <button className="rounded border border-red-200 px-1.5 py-0.5 text-[10px] text-red-600 hover:bg-red-100 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/30">
-                      Retry
-                    </button>
-                    <button className="rounded border border-neutral-200 px-1.5 py-0.5 text-[10px] text-neutral-500 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800">
-                      Skip
-                    </button>
-                    <button className="rounded border border-red-300 px-1.5 py-0.5 text-[10px] text-red-700 hover:bg-red-100 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/30">
-                      Abort
-                    </button>
                   </div>
                 </div>
               ))}

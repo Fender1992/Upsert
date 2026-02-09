@@ -1,28 +1,13 @@
-import { useState, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useMigrationStore, type TableMapping } from "../../../stores/migrationStore";
 import { useConnectionStore } from "../../../stores/connectionStore";
-
-// Simulated table lists -- in production, fetched from the Tauri backend
-const DEMO_SOURCE_TABLES = [
-  "users",
-  "orders",
-  "products",
-  "categories",
-  "order_items",
-  "reviews",
-  "inventory",
-  "shipping_addresses",
-];
-const DEMO_TARGET_TABLES = [
-  "users",
-  "orders",
-  "products",
-  "categories",
-  "order_items",
-  "reviews",
-  "stock",
-  "addresses",
-];
+import {
+  getTables,
+  getRowCount,
+  getTableInfo,
+  connectDatabase,
+  type ConnectionConfigDto,
+} from "../../../lib/tauriCommands";
 
 export default function MapTables() {
   const {
@@ -38,28 +23,147 @@ export default function MapTables() {
   const targetConn = connections.find((c) => c.id === targetConnectionId);
 
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [targetTables, setTargetTables] = useState<string[]>([]);
+  // Store detected key columns per source table
+  const [keyColumnsMap, setKeyColumnsMap] = useState<Record<string, string[]>>({});
 
-  // Auto-generate mappings on first load if empty
-  const initMappings = useCallback(() => {
-    const mappings: TableMapping[] = DEMO_SOURCE_TABLES.map((st) => {
-      const autoMatch = DEMO_TARGET_TABLES.find(
-        (tt) => tt.toLowerCase() === st.toLowerCase(),
-      );
-      return {
-        id: crypto.randomUUID(),
-        sourceTable: st,
-        targetTable: autoMatch ?? "",
-        included: !!autoMatch,
-        estimatedRows: Math.floor(Math.random() * 50000) + 100,
-      };
-    });
-    setTableMappings(mappings);
-  }, [setTableMappings]);
+  // Ensure a connection is registered in the backend before querying it
+  const ensureConnected = async (connId: string) => {
+    const conn = connections.find((c) => c.id === connId);
+    if (!conn) throw new Error(`Connection profile '${connId}' not found`);
+    const config: ConnectionConfigDto = {
+      engine: conn.engine,
+      host: conn.host,
+      port: conn.port,
+      database: conn.database,
+      username: conn.username,
+      password: conn.password,
+      filePath: conn.filePath,
+      readOnly: conn.readOnly,
+    };
+    await connectDatabase(connId, config);
+  };
 
-  // Initialize if empty
+  // Fetch real tables from both connections
+  useEffect(() => {
+    if (!sourceConnectionId || !targetConnectionId || tableMappings.length > 0) return;
+
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+
+    (async () => {
+      try {
+        // Auto-connect both databases if not already registered
+        await Promise.all([
+          ensureConnected(sourceConnectionId),
+          ensureConnected(targetConnectionId),
+        ]);
+
+        const [sourceTables, tgtTables] = await Promise.all([
+          getTables(sourceConnectionId),
+          getTables(targetConnectionId),
+        ]);
+
+        if (cancelled) return;
+        setTargetTables(tgtTables);
+
+        // Fetch row counts and key columns for source tables in parallel
+        const rowCountPromises = sourceTables.map((t) =>
+          getRowCount(sourceConnectionId, t).catch(() => 0),
+        );
+        const tableInfoPromises = sourceTables.map((t) =>
+          getTableInfo(sourceConnectionId, t).catch(() => null),
+        );
+
+        const [rowCounts, tableInfos] = await Promise.all([
+          Promise.all(rowCountPromises),
+          Promise.all(tableInfoPromises),
+        ]);
+
+        if (cancelled) return;
+
+        // Build key columns map from PK detection
+        const keyCols: Record<string, string[]> = {};
+        tableInfos.forEach((info, idx) => {
+          if (!info) return;
+          const pks = info.columns
+            .filter((c) => c.isPrimaryKey)
+            .map((c) => c.name);
+          keyCols[sourceTables[idx]] = pks.length > 0 ? pks : ["id"];
+        });
+        setKeyColumnsMap(keyCols);
+
+        const mappings: TableMapping[] = sourceTables.map((st, idx) => {
+          const autoMatch = tgtTables.find(
+            (tt) => tt.toLowerCase() === st.toLowerCase(),
+          );
+          return {
+            id: crypto.randomUUID(),
+            sourceTable: st,
+            targetTable: autoMatch ?? "",
+            included: !!autoMatch,
+            estimatedRows: Number(rowCounts[idx]) || 0,
+          };
+        });
+        setTableMappings(mappings);
+      } catch (err) {
+        if (!cancelled) {
+          setError(String(err));
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sourceConnectionId, targetConnectionId, tableMappings.length, setTableMappings]);
+
+  // Store key columns on the migration store for later use
+  // We expose it via a module-level getter that DryRun/Execute can access
+  // For now, store it in window for cross-component access
+  useEffect(() => {
+    (window as any).__upsert_key_columns = keyColumnsMap;
+  }, [keyColumnsMap]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+        <p className="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
+          Fetching tables from databases...
+        </p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <p className="text-sm font-medium text-red-500">{error}</p>
+        <p className="mt-1 text-xs text-neutral-400">
+          Make sure both connections are tested and connected.
+        </p>
+      </div>
+    );
+  }
+
   if (tableMappings.length === 0) {
-    initMappings();
-    return null;
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+          No tables found
+        </p>
+        <p className="mt-1 text-xs text-neutral-400 dark:text-neutral-500">
+          Make sure connections are established and databases contain tables.
+        </p>
+      </div>
+    );
   }
 
   const filtered = search
@@ -142,7 +246,7 @@ export default function MapTables() {
             <MappingRow
               key={mapping.id}
               mapping={mapping}
-              targetTables={DEMO_TARGET_TABLES}
+              targetTables={targetTables}
               onToggle={() =>
                 updateTableMapping(mapping.id, {
                   included: !mapping.included,

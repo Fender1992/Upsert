@@ -15,7 +15,7 @@ export default function TabBar() {
   }
 
   return (
-    <div className="flex h-9 shrink-0 items-stretch overflow-x-auto border-b border-neutral-300 bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-900">
+    <div data-tour="tab-bar" className="flex h-9 shrink-0 items-stretch overflow-x-auto border-b border-neutral-300 bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-900">
       {tabs.map((tab) => (
         <div
           key={tab.id}

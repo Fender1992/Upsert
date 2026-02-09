@@ -1,8 +1,10 @@
 import { useUiStore } from "../../stores/uiStore";
 import { useConnectionStore } from "../../stores/connectionStore";
+import { useTourStore } from "../../stores/tourStore";
 
 export default function StatusBar() {
   const { theme, setTheme, notifications } = useUiStore();
+  const startTour = useTourStore((s) => s.startTour);
   const { connections, activeConnectionId } = useConnectionStore();
 
   const activeConnection = connections.find((c) => c.id === activeConnectionId);
@@ -22,7 +24,7 @@ export default function StatusBar() {
   };
 
   return (
-    <div className="flex h-6 items-center justify-between border-t border-neutral-300 bg-neutral-100 px-3 text-xs dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400">
+    <div data-tour="status-bar" className="flex h-6 items-center justify-between border-t border-neutral-300 bg-neutral-100 px-3 text-xs dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400">
       <div className="flex items-center gap-2">
         {activeConnection ? (
           <>
@@ -43,6 +45,13 @@ export default function StatusBar() {
         )}
       </div>
       <div className="flex items-center gap-3">
+        <button
+          onClick={startTour}
+          className="rounded px-1.5 py-0.5 text-[10px] font-medium text-neutral-500 hover:bg-neutral-200 hover:text-neutral-700 dark:hover:bg-neutral-700 dark:hover:text-neutral-300"
+          title="Start guided tour"
+        >
+          Tour
+        </button>
         {unreadCount > 0 && (
           <span className="rounded-full bg-blue-600 px-1.5 text-[10px] font-medium text-white">
             {unreadCount}

@@ -1,4 +1,3 @@
-#[tauri::command]
-pub fn greet(name: &str) -> String {
-    format!("Hello, {}! Welcome to Upsert.", name)
-}
+pub mod connection;
+pub mod migration;
+pub mod schema;
