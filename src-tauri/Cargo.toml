@@ -42,6 +42,8 @@ specta = "=2.0.0-rc.22"
 tokio-rustls = "0.26"
 rustls = "0.23"
 futures-util = "0.3"
+reqwest = { version = "0.12", features = ["json", "stream"] }
+tauri-plugin-shell = "2"
 
 [dev-dependencies]
 tempfile = "3"

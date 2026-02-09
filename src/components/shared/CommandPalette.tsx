@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useUiStore } from "../../stores/uiStore";
+import { useChatStore } from "../../stores/chatStore";
 
 interface Command {
   id: string;
@@ -18,6 +19,8 @@ export default function CommandPalette() {
     bottomPanelVisible,
     setBottomPanelVisible,
   } = useUiStore();
+
+  const toggleChatDrawer = useChatStore((s) => s.toggleDrawer);
 
   const [search, setSearch] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -47,6 +50,11 @@ export default function CommandPalette() {
       id: "clear-log",
       label: "Clear Output Log",
       action: clearLog,
+    },
+    {
+      id: "toggle-ai-chat",
+      label: "Toggle AI Chat",
+      action: toggleChatDrawer,
     },
   ];
 

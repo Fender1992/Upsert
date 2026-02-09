@@ -4,6 +4,7 @@ import {
   type DatabaseEngine,
 } from "../../stores/connectionStore";
 import { useSettingsStore } from "../../stores/settingsStore";
+import { useTourStore } from "../../stores/tourStore";
 
 const STEPS = [
   { number: 1, label: "Welcome" },
@@ -33,6 +34,7 @@ const defaultPorts: Partial<Record<DatabaseEngine, number>> = {
 export default function OnboardingWizard() {
   const { addConnection } = useConnectionStore();
   const { setHasCompletedOnboarding } = useSettingsStore();
+  const startTour = useTourStore((s) => s.startTour);
 
   const [step, setStep] = useState(1);
   const [engine, setEngine] = useState<DatabaseEngine>("PostgreSql");
@@ -76,10 +78,12 @@ export default function OnboardingWizard() {
 
   const handleFinish = () => {
     setHasCompletedOnboarding(true);
+    setTimeout(() => startTour(), 300);
   };
 
   const handleSkip = () => {
     setHasCompletedOnboarding(true);
+    setTimeout(() => startTour(), 300);
   };
 
   return (

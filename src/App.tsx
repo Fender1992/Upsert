@@ -12,6 +12,43 @@ import OnboardingWizard from "./components/onboarding/OnboardingWizard";
 import JobList from "./components/jobs/JobList";
 import Dashboard from "./components/jobs/Dashboard";
 import AppTour from "./components/tour/AppTour";
+import ChatDrawer from "./components/chat/ChatDrawer";
+import { useTourStore } from "./stores/tourStore";
+import { useChatStore } from "./stores/chatStore";
+import { listen } from "@tauri-apps/api/event";
+import { useConnectionStore } from "./stores/connectionStore";
+import { indexAppContext, indexConnectionContext } from "./lib/tauriCommands";
+
+function useDbHydration() {
+  const hydrateSettings = useSettingsStore((s) => s.hydrate);
+  const hydrateConnections = useConnectionStore((s) => s.hydrate);
+  const hydrateChat = useChatStore((s) => s.hydrate);
+
+  useEffect(() => {
+    hydrateSettings();
+    hydrateConnections();
+    hydrateChat();
+  }, [hydrateSettings, hydrateConnections, hydrateChat]);
+
+  // On models-ready, index app context and re-index connected DBs
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    listen<boolean>("models-ready", () => {
+      // Index global app info
+      indexAppContext().catch(() => {});
+      // Re-index any already-connected databases
+      const { connections } = useConnectionStore.getState();
+      for (const conn of connections) {
+        if (conn.status === "connected") {
+          indexConnectionContext(conn.id, conn.name, conn.engine).catch(() => {});
+        }
+      }
+    }).then((fn) => {
+      unlisten = fn;
+    });
+    return () => unlisten?.();
+  }, []);
+}
 
 function useThemeSync() {
   const theme = useUiStore((s) => s.theme);
@@ -45,6 +82,8 @@ function useGlobalShortcuts() {
     removeTab,
   } = useUiStore();
 
+  const toggleChatDrawer = useChatStore((s) => s.toggleDrawer);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const ctrl = e.ctrlKey || e.metaKey;
@@ -61,6 +100,9 @@ function useGlobalShortcuts() {
       } else if (ctrl && e.key === "w") {
         e.preventDefault();
         if (activeTabId) removeTab(activeTabId);
+      } else if (ctrl && e.key === "l") {
+        e.preventDefault();
+        toggleChatDrawer();
       }
     };
 
@@ -74,15 +116,18 @@ function useGlobalShortcuts() {
     setBottomPanelVisible,
     activeTabId,
     removeTab,
+    toggleChatDrawer,
   ]);
 }
 
 function App() {
+  useDbHydration();
   useThemeSync();
   useGlobalShortcuts();
 
   const { tabs, activeTabId } = useUiStore();
   const hasCompletedOnboarding = useSettingsStore((s) => s.hasCompletedOnboarding);
+  const startTour = useTourStore((s) => s.startTour);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editConnectionId, setEditConnectionId] = useState<string | null>(null);
   const [migrationWizardOpen, setMigrationWizardOpen] = useState(false);
@@ -167,6 +212,14 @@ function App() {
                 <p className="mt-1 text-xs text-neutral-400 dark:text-neutral-600">
                   Click the title to open the Dashboard, or get started below.
                 </p>
+                <div className="mt-3 flex justify-center">
+                  <button
+                    onClick={startTour}
+                    className="rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-400 dark:hover:bg-blue-900/50"
+                  >
+                    Take a Tour
+                  </button>
+                </div>
                 <div className="mt-4 flex justify-center gap-2">
                   <button
                     data-tour="new-migration-btn"
@@ -204,6 +257,9 @@ function App() {
 
       {/* Command palette overlay */}
       <CommandPalette />
+
+      {/* AI Chat drawer */}
+      <ChatDrawer />
 
       {/* Guided tour overlay */}
       <AppTour />

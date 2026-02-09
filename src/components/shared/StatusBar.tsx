@@ -1,10 +1,12 @@
 import { useUiStore } from "../../stores/uiStore";
 import { useConnectionStore } from "../../stores/connectionStore";
 import { useTourStore } from "../../stores/tourStore";
+import { useChatStore } from "../../stores/chatStore";
 
 export default function StatusBar() {
   const { theme, setTheme, notifications } = useUiStore();
   const startTour = useTourStore((s) => s.startTour);
+  const toggleChatDrawer = useChatStore((s) => s.toggleDrawer);
   const { connections, activeConnectionId } = useConnectionStore();
 
   const activeConnection = connections.find((c) => c.id === activeConnectionId);
@@ -45,6 +47,13 @@ export default function StatusBar() {
         )}
       </div>
       <div className="flex items-center gap-3">
+        <button
+          onClick={toggleChatDrawer}
+          className="rounded px-1.5 py-0.5 text-[10px] font-medium text-neutral-500 hover:bg-neutral-200 hover:text-neutral-700 dark:hover:bg-neutral-700 dark:hover:text-neutral-300"
+          title="AI Chat (Ctrl+L)"
+        >
+          AI Chat
+        </button>
         <button
           onClick={startTour}
           className="rounded px-1.5 py-0.5 text-[10px] font-medium text-neutral-500 hover:bg-neutral-200 hover:text-neutral-700 dark:hover:bg-neutral-700 dark:hover:text-neutral-300"

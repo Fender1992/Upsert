@@ -4,6 +4,7 @@ import {
   type ConnectionProfile,
 } from "../../stores/connectionStore";
 import { useUiStore } from "../../stores/uiStore";
+import { indexConnectionContext } from "../../lib/tauriCommands";
 
 const engineIcons: Record<string, string> = {
   SqlServer: "SQL",
@@ -49,6 +50,8 @@ export default function ConnectionSidebar({
       setActiveConnection(conn.id);
       setConnectionStatus(conn.id, "connected");
       appendLog(`Connected to ${conn.name}`);
+      // Fire-and-forget: index connection context for RAG chat
+      indexConnectionContext(conn.id, conn.name, conn.engine).catch(() => {});
     },
     [setActiveConnection, setConnectionStatus, appendLog],
   );

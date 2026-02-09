@@ -25,3 +25,9 @@ coverage/
 
 # Tauri
 src-tauri/gen/
+
+# Sidecar binaries (downloaded via scripts/download-ollama.sh)
+src-tauri/binaries/
+
+# Runtime app database (the source blank.db is tracked)
+upsert.db

@@ -144,3 +144,168 @@ export function executeMigration(
 export function cancelMigration(migrationId: string): Promise<boolean> {
   return invoke<boolean>("cancel_migration", { migrationId });
 }
+
+// ── Chat / Ollama ────────────────────────────────────────────────────
+
+export interface OllamaModel {
+  name: string;
+  size: number;
+  modified_at: string;
+}
+
+export interface RequiredModelStatus {
+  name: string;
+  present: boolean;
+}
+
+export interface OllamaStatus {
+  running: boolean;
+  models: OllamaModel[];
+  required_models: RequiredModelStatus[];
+  all_models_ready: boolean;
+}
+
+export interface ChatMessageDto {
+  role: string;
+  content: string;
+}
+
+export function checkOllamaStatus(): Promise<OllamaStatus> {
+  return invoke<OllamaStatus>("check_ollama_status");
+}
+
+export function listOllamaModels(): Promise<OllamaModel[]> {
+  return invoke<OllamaModel[]>("list_ollama_models");
+}
+
+export function sendChatMessage(
+  model: string,
+  messages: ChatMessageDto[],
+  requestId: string,
+): Promise<string> {
+  return invoke<string>("send_chat_message", { model, messages, requestId });
+}
+
+export function pullModel(name: string): Promise<void> {
+  return invoke<void>("pull_model", { name });
+}
+
+// ── App Database (persistence) ────────────────────────────────────────
+
+export interface ConnectionProfileDto {
+  id: string;
+  name: string;
+  engine: string;
+  host: string | null;
+  port: number | null;
+  databaseName: string | null;
+  username: string | null;
+  filePath: string | null;
+  readOnly: boolean;
+  credentialKey: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MigrationHistoryDto {
+  id: string;
+  sourceConnectionId: string | null;
+  targetConnectionId: string | null;
+  mode: string;
+  status: string;
+  configJson: string | null;
+  resultJson: string | null;
+  error: string | null;
+  startedAt: string;
+  completedAt: string | null;
+  rowsInserted: number;
+  rowsUpdated: number;
+  rowsDeleted: number;
+  rowsSkipped: number;
+  errorCount: number;
+  durationMs: number;
+}
+
+export interface ChatMessagePersistDto {
+  id: string;
+  role: string;
+  content: string;
+  model: string | null;
+  timestamp: number;
+}
+
+export function saveConnectionProfile(
+  profile: ConnectionProfileDto,
+): Promise<void> {
+  return invoke<void>("save_connection_profile", { profile });
+}
+
+export function getConnectionProfiles(): Promise<ConnectionProfileDto[]> {
+  return invoke<ConnectionProfileDto[]>("get_connection_profiles");
+}
+
+export function deleteConnectionProfile(id: string): Promise<void> {
+  return invoke<void>("delete_connection_profile", { id });
+}
+
+export function getSetting(key: string): Promise<string | null> {
+  return invoke<string | null>("get_setting", { key });
+}
+
+export function setSetting(key: string, value: string): Promise<void> {
+  return invoke<void>("set_setting", { key, value });
+}
+
+export function getAllSettings(): Promise<Record<string, string>> {
+  return invoke<Record<string, string>>("get_all_settings");
+}
+
+export function getMigrationHistory(): Promise<MigrationHistoryDto[]> {
+  return invoke<MigrationHistoryDto[]>("get_migration_history");
+}
+
+export function saveChatMessageToDb(
+  message: ChatMessagePersistDto,
+): Promise<void> {
+  return invoke<void>("save_chat_message", { message });
+}
+
+export function loadChatMessagesFromDb(): Promise<ChatMessagePersistDto[]> {
+  return invoke<ChatMessagePersistDto[]>("load_chat_messages");
+}
+
+export function clearChatMessagesInDb(): Promise<void> {
+  return invoke<void>("clear_chat_messages");
+}
+
+// ── RAG Context (vectorized search) ───────────────────────────────────
+
+export interface SearchResult {
+  label: string;
+  content: string;
+  chunkType: string;
+  score: number;
+}
+
+export function indexConnectionContext(
+  connectionId: string,
+  connectionName: string,
+  engine: string,
+): Promise<number> {
+  return invoke<number>("index_connection_context", {
+    connectionId,
+    connectionName,
+    engine,
+  });
+}
+
+export function searchContext(
+  query: string,
+  topK?: number,
+): Promise<SearchResult[]> {
+  return invoke<SearchResult[]>("search_context", { query, topK });
+}
+
+export function indexAppContext(): Promise<void> {
+  return invoke<void>("index_app_context");
+}
