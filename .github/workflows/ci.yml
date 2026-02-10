@@ -19,6 +19,9 @@ jobs:
             ~/.cargo/git
             src-tauri/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
+      - name: Download Ollama sidecar
+        shell: bash
+        run: bash scripts/download-ollama.sh
       - name: Build
         working-directory: src-tauri
         run: cargo build
@@ -37,8 +40,10 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - name: Type check
         run: npx tsc --noEmit
       - name: Build
         run: npx vite build
+      - name: Test
+        run: npx vitest run

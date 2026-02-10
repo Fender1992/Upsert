@@ -42,6 +42,7 @@ export default function OnboardingWizard() {
   const [port, setPort] = useState<number | "">(5432);
   const [database, setDatabase] = useState("");
   const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
 
   const handleEngineChange = (e: DatabaseEngine) => {
@@ -70,7 +71,8 @@ export default function OnboardingWizard() {
       port: port || undefined,
       database: database.trim() || undefined,
       username: username.trim() || undefined,
-      readOnly: false,
+      password: password || undefined,
+      readOnly: true,
     });
 
     setStep(3);
@@ -267,6 +269,19 @@ export default function OnboardingWizard() {
                   onChange={(e) => setUsername(e.target.value)}
                   className="input-field"
                   placeholder="postgres"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-neutral-600 dark:text-neutral-400">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="input-field"
+                  placeholder="Optional"
                 />
               </div>
             </div>

@@ -10,7 +10,8 @@
     "tauri": "tauri",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "postinstall": "bash scripts/download-ollama.sh || echo 'Warning: Ollama sidecar download failed. Chat features require Ollama.'"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",
