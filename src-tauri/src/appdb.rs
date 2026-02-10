@@ -610,7 +610,7 @@ mod tests {
 
     fn temp_db() -> AppDatabase {
         let dir = tempfile::tempdir().unwrap();
-        AppDatabase::init(dir.into_path()).unwrap()
+        AppDatabase::init(dir.keep()).unwrap()
     }
 
     #[tokio::test]

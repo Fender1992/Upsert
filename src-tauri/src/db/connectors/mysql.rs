@@ -250,6 +250,7 @@ impl MySqlConnector {
             .await?;
 
         // Get column details
+        #[allow(clippy::type_complexity)]
         let col_rows: Vec<(String, String, String, Option<i64>, Option<i64>, Option<i64>, Option<String>, i64)> = conn
             .exec(
                 "SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, \
@@ -317,6 +318,7 @@ impl MySqlConnector {
         let mut conn = self.get_conn().await?;
         let db = self.database_name();
 
+        #[allow(clippy::type_complexity)]
         let rows: Vec<(String, String, String, Option<String>, Option<String>)> = conn
             .exec(
                 "SELECT tc.CONSTRAINT_NAME, tc.CONSTRAINT_TYPE, kcu.COLUMN_NAME, \
@@ -412,7 +414,7 @@ fn mysql_value_to_json(row: &mysql_async::Row, idx: usize) -> serde_json::Value 
         }
         Some(Value::Time(neg, d, h, min, s, _us)) => {
             let sign = if *neg { "-" } else { "" };
-            let total_hours = (*d as u32) * 24 + (*h as u32);
+            let total_hours = *d * 24 + (*h as u32);
             serde_json::Value::String(format!(
                 "{}{:02}:{:02}:{:02}",
                 sign, total_hours, min, s

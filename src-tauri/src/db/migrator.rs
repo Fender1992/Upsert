@@ -393,7 +393,7 @@ fn build_plan_from_diff(
             // Insert new + update existing; never delete
             rows_to_insert = diff.inserted_rows.clone();
             resolve_updates(
-                &diff,
+                diff,
                 config,
                 &mut rows_to_update,
                 &mut rows_to_review,
@@ -403,7 +403,7 @@ fn build_plan_from_diff(
             // Insert new + update existing; no deletes
             rows_to_insert = diff.inserted_rows.clone();
             resolve_updates(
-                &diff,
+                diff,
                 config,
                 &mut rows_to_update,
                 &mut rows_to_review,
@@ -413,7 +413,7 @@ fn build_plan_from_diff(
             // Insert + update + delete to make target match source exactly
             rows_to_insert = diff.inserted_rows.clone();
             resolve_updates(
-                &diff,
+                diff,
                 config,
                 &mut rows_to_update,
                 &mut rows_to_review,
@@ -431,7 +431,7 @@ fn build_plan_from_diff(
     let batch_count = if total_ops == 0 {
         0
     } else {
-        (total_ops + batch_size - 1) / batch_size
+        total_ops.div_ceil(batch_size)
     };
 
     MigrationPlan {

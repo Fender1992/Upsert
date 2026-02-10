@@ -3,6 +3,9 @@
 //! Prerequisites:
 //!   - SQL Server Express on localhost:1433 with sa/YourPassword123, database UpsertTestSource seeded
 //!   - PostgreSQL on localhost:5432 with user postgres, database upsert_test_target seeded
+//!
+//! These tests are `#[ignore]`d by default. Run them explicitly:
+//!   cargo test --test live_db_test -- --ignored
 
 use upsert_lib::db::connectors::{
     postgres::PostgresConnector, sqlserver::SqlServerConnector, ConnectionConfig, DatabaseConnector,
@@ -41,6 +44,7 @@ fn postgres_config() -> ConnectionConfig {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn sqlserver_connect_disconnect() {
     let mut conn = SqlServerConnector::new(sqlserver_config());
     assert!(!conn.is_connected().await);
@@ -53,6 +57,7 @@ async fn sqlserver_connect_disconnect() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn sqlserver_connect_wrong_password() {
     let mut cfg = sqlserver_config();
     cfg.password = Some("WrongPassword999".to_string());
@@ -63,6 +68,7 @@ async fn sqlserver_connect_wrong_password() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn sqlserver_connect_wrong_database() {
     let mut cfg = sqlserver_config();
     cfg.database = Some("NonExistentDb_XYZ_999".to_string());
@@ -90,6 +96,7 @@ async fn sqlserver_connect_wrong_database() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn sqlserver_list_tables() {
     let mut conn = SqlServerConnector::new(sqlserver_config());
     conn.connect().await.expect("connect");
@@ -125,6 +132,7 @@ async fn sqlserver_list_tables() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn sqlserver_table_info_customers() {
     let mut conn = SqlServerConnector::new(sqlserver_config());
     conn.connect().await.expect("connect");
@@ -193,6 +201,7 @@ async fn sqlserver_table_info_customers() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn sqlserver_table_info_products() {
     let mut conn = SqlServerConnector::new(sqlserver_config());
     conn.connect().await.expect("connect");
@@ -234,6 +243,7 @@ async fn sqlserver_table_info_products() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn sqlserver_table_info_orders() {
     let mut conn = SqlServerConnector::new(sqlserver_config());
     conn.connect().await.expect("connect");
@@ -265,6 +275,7 @@ async fn sqlserver_table_info_orders() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn sqlserver_row_counts() {
     let mut conn = SqlServerConnector::new(sqlserver_config());
     conn.connect().await.expect("connect");
@@ -301,6 +312,7 @@ async fn sqlserver_row_counts() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn sqlserver_get_table_info_nonexistent() {
     let mut conn = SqlServerConnector::new(sqlserver_config());
     conn.connect().await.expect("connect");
@@ -324,6 +336,7 @@ async fn sqlserver_get_table_info_nonexistent() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn sqlserver_get_rows() {
     let mut conn = SqlServerConnector::new(sqlserver_config());
     conn.connect().await.expect("connect");
@@ -344,6 +357,7 @@ async fn sqlserver_get_rows() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn sqlserver_execute_query() {
     let mut conn = SqlServerConnector::new(sqlserver_config());
     conn.connect().await.expect("connect");
@@ -364,6 +378,7 @@ async fn sqlserver_execute_query() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn sqlserver_table_info_sqlserver_only_tables() {
     let mut conn = SqlServerConnector::new(sqlserver_config());
     conn.connect().await.expect("connect");
@@ -390,6 +405,7 @@ async fn sqlserver_table_info_sqlserver_only_tables() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn sqlserver_full_schema() {
     let mut conn = SqlServerConnector::new(sqlserver_config());
     conn.connect().await.expect("connect");
@@ -410,6 +426,7 @@ async fn sqlserver_full_schema() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn postgres_connect_disconnect() {
     let mut conn = PostgresConnector::new(postgres_config());
     assert!(!conn.is_connected().await);
@@ -422,6 +439,7 @@ async fn postgres_connect_disconnect() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn postgres_connect_wrong_database() {
     let mut cfg = postgres_config();
     cfg.database = Some("nonexistent_db_xyz_999".to_string());
@@ -436,6 +454,7 @@ async fn postgres_connect_wrong_database() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn postgres_list_tables() {
     let mut conn = PostgresConnector::new(postgres_config());
     conn.connect().await.expect("connect");
@@ -478,6 +497,7 @@ async fn postgres_list_tables() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn postgres_table_info_customers() {
     let mut conn = PostgresConnector::new(postgres_config());
     conn.connect().await.expect("connect");
@@ -524,6 +544,7 @@ async fn postgres_table_info_customers() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn postgres_table_info_products() {
     let mut conn = PostgresConnector::new(postgres_config());
     conn.connect().await.expect("connect");
@@ -563,6 +584,7 @@ async fn postgres_table_info_products() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn postgres_table_info_orders() {
     let mut conn = PostgresConnector::new(postgres_config());
     conn.connect().await.expect("connect");
@@ -590,6 +612,7 @@ async fn postgres_table_info_orders() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn postgres_row_counts() {
     let mut conn = PostgresConnector::new(postgres_config());
     conn.connect().await.expect("connect");
@@ -623,6 +646,7 @@ async fn postgres_row_counts() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn postgres_table_info_pg_only_tables() {
     let mut conn = PostgresConnector::new(postgres_config());
     conn.connect().await.expect("connect");
@@ -647,6 +671,7 @@ async fn postgres_table_info_pg_only_tables() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn postgres_full_schema() {
     let mut conn = PostgresConnector::new(postgres_config());
     conn.connect().await.expect("connect");
@@ -663,6 +688,7 @@ async fn postgres_full_schema() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn postgres_get_rows() {
     let mut conn = PostgresConnector::new(postgres_config());
     conn.connect().await.expect("connect");
@@ -681,6 +707,7 @@ async fn postgres_get_rows() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn postgres_execute_query() {
     let mut conn = PostgresConnector::new(postgres_config());
     conn.connect().await.expect("connect");
@@ -697,6 +724,7 @@ async fn postgres_execute_query() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn postgres_get_table_info_nonexistent() {
     let mut conn = PostgresConnector::new(postgres_config());
     conn.connect().await.expect("connect");
@@ -722,6 +750,7 @@ async fn postgres_get_table_info_nonexistent() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn cross_engine_customer_data_differences() {
     // Verify the deliberate data differences between SQL Server and PostgreSQL
     let mut ss = SqlServerConnector::new(sqlserver_config());
@@ -770,6 +799,7 @@ async fn cross_engine_customer_data_differences() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn sqlserver_unicode_data() {
     let mut conn = SqlServerConnector::new(sqlserver_config());
     conn.connect().await.expect("connect");
@@ -795,6 +825,7 @@ async fn sqlserver_unicode_data() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn postgres_unicode_data() {
     let mut conn = PostgresConnector::new(postgres_config());
     conn.connect().await.expect("connect");

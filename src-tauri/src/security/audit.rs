@@ -159,12 +159,10 @@ impl AuditLogger {
         if let Some(ref conn_id) = filter.connection_id {
             let matches_source = entry
                 .source_connection
-                .as_ref()
-                .map_or(false, |s| s == conn_id);
+                .as_ref() == Some(conn_id);
             let matches_target = entry
                 .target_connection
-                .as_ref()
-                .map_or(false, |t| t == conn_id);
+                .as_ref() == Some(conn_id);
             if !matches_source && !matches_target {
                 return false;
             }

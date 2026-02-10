@@ -12,6 +12,9 @@
 //!   - SQL generation for valid rows
 //!
 //! IMPORTANT: No SQL is executed against the target database; all tests are read-only.
+//!
+//! These tests are `#[ignore]`d by default. Run them explicitly:
+//!   cargo test --test migration_test -- --ignored
 
 use std::collections::{HashMap, HashSet};
 
@@ -75,6 +78,7 @@ const SHARED_TABLES: &[&str] = &[
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn connect_and_fetch_shared_tables() {
     let mut ss = SqlServerConnector::new(sqlserver_config());
     let mut pg = PostgresConnector::new(postgres_config());
@@ -112,6 +116,7 @@ async fn connect_and_fetch_shared_tables() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn plan_migration_categories() {
     let mut ss = SqlServerConnector::new(sqlserver_config());
     let mut pg = PostgresConnector::new(postgres_config());
@@ -174,6 +179,7 @@ async fn plan_migration_categories() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn plan_migration_customers() {
     let mut ss = SqlServerConnector::new(sqlserver_config());
     let mut pg = PostgresConnector::new(postgres_config());
@@ -227,6 +233,7 @@ async fn plan_migration_customers() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn prepare_row_categories_skips_missing_slug() {
     let mut ss = SqlServerConnector::new(sqlserver_config());
     let mut pg = PostgresConnector::new(postgres_config());
@@ -277,6 +284,7 @@ async fn prepare_row_categories_skips_missing_slug() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn prepare_row_truncates_oversized_strings() {
     let mut pg = PostgresConnector::new(postgres_config());
     pg.connect().await.expect("PostgreSQL connect");
@@ -325,6 +333,7 @@ async fn prepare_row_truncates_oversized_strings() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn postgres_fk_dependencies_detected() {
     let mut pg = PostgresConnector::new(postgres_config());
     pg.connect().await.expect("PostgreSQL connect");
@@ -423,6 +432,7 @@ async fn postgres_fk_dependencies_detected() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn fk_ordering_parents_before_children() {
     let mut pg = PostgresConnector::new(postgres_config());
     pg.connect().await.expect("PostgreSQL connect");
@@ -480,6 +490,7 @@ async fn fk_ordering_parents_before_children() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn generate_insert_sql_for_valid_rows() {
     let mut ss = SqlServerConnector::new(sqlserver_config());
     let mut pg = PostgresConnector::new(postgres_config());
@@ -545,6 +556,7 @@ async fn generate_insert_sql_for_valid_rows() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn generate_update_and_delete_sql() {
     let mut pg = PostgresConnector::new(postgres_config());
     pg.connect().await.expect("PostgreSQL connect");
@@ -591,6 +603,7 @@ async fn generate_update_and_delete_sql() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn plan_migration_mirror_mode_detects_deletes() {
     let mut ss = SqlServerConnector::new(sqlserver_config());
     let mut pg = PostgresConnector::new(postgres_config());
@@ -643,6 +656,7 @@ async fn plan_migration_mirror_mode_detects_deletes() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn plan_migration_products() {
     let mut ss = SqlServerConnector::new(sqlserver_config());
     let mut pg = PostgresConnector::new(postgres_config());
@@ -698,6 +712,7 @@ async fn plan_migration_products() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn generate_insert_sql_sqlserver_quoting() {
     let mut pg = PostgresConnector::new(postgres_config());
     pg.connect().await.expect("PostgreSQL connect");
@@ -725,6 +740,7 @@ async fn generate_insert_sql_sqlserver_quoting() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn prepare_row_passes_nullable_missing_columns() {
     let mut pg = PostgresConnector::new(postgres_config());
     pg.connect().await.expect("PostgreSQL connect");
@@ -764,6 +780,7 @@ async fn prepare_row_passes_nullable_missing_columns() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn dry_run_simulation_all_shared_tables() {
     let mut ss = SqlServerConnector::new(sqlserver_config());
     let mut pg = PostgresConnector::new(postgres_config());
@@ -847,6 +864,7 @@ async fn dry_run_simulation_all_shared_tables() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn execute_migration_upsert_mode_with_live_data() {
     let mut ss = SqlServerConnector::new(sqlserver_config());
     let mut pg = PostgresConnector::new(postgres_config());
@@ -893,6 +911,7 @@ async fn execute_migration_upsert_mode_with_live_data() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn execute_migration_append_only_with_live_data() {
     let mut ss = SqlServerConnector::new(sqlserver_config());
     let mut pg = PostgresConnector::new(postgres_config());
@@ -943,6 +962,7 @@ async fn execute_migration_append_only_with_live_data() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn execute_migration_merge_mode_with_live_data() {
     let mut ss = SqlServerConnector::new(sqlserver_config());
     let mut pg = PostgresConnector::new(postgres_config());
@@ -987,6 +1007,7 @@ async fn execute_migration_merge_mode_with_live_data() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn execute_migration_mirror_mode_with_live_data() {
     let mut ss = SqlServerConnector::new(sqlserver_config());
     let mut pg = PostgresConnector::new(postgres_config());
@@ -1035,6 +1056,7 @@ async fn execute_migration_mirror_mode_with_live_data() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn execute_migration_schema_only_with_live_data() {
     let mut ss = SqlServerConnector::new(sqlserver_config());
     let mut pg = PostgresConnector::new(postgres_config());
@@ -1080,6 +1102,7 @@ async fn execute_migration_schema_only_with_live_data() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn cancel_migration_mid_flight() {
     let mut ss = SqlServerConnector::new(sqlserver_config());
     ss.connect().await.expect("SQL Server connect");
@@ -1131,6 +1154,7 @@ async fn cancel_migration_mid_flight() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn dry_run_does_not_modify_data_with_live_rows() {
     let mut ss = SqlServerConnector::new(sqlserver_config());
     let mut pg = PostgresConnector::new(postgres_config());
@@ -1186,6 +1210,7 @@ async fn dry_run_does_not_modify_data_with_live_rows() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn conflict_resolution_target_wins_with_live_data() {
     let mut ss = SqlServerConnector::new(sqlserver_config());
     let mut pg = PostgresConnector::new(postgres_config());
@@ -1235,6 +1260,7 @@ async fn conflict_resolution_target_wins_with_live_data() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn conflict_resolution_manual_review_with_live_data() {
     let mut ss = SqlServerConnector::new(sqlserver_config());
     let mut pg = PostgresConnector::new(postgres_config());
@@ -1305,6 +1331,7 @@ async fn conflict_resolution_manual_review_with_live_data() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn error_handling_invalid_table_name() {
     let mut ss = SqlServerConnector::new(sqlserver_config());
     ss.connect().await.expect("SQL Server connect");
@@ -1340,6 +1367,7 @@ async fn error_handling_invalid_table_name() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn error_handling_disconnected_database() {
     let ss = SqlServerConnector::new(sqlserver_config());
     // Do NOT connect - test operations on a disconnected connector
@@ -1372,6 +1400,7 @@ async fn error_handling_disconnected_database() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn error_handling_wrong_credentials() {
     let mut bad_cfg = postgres_config();
     bad_cfg.password = Some("totally_wrong_password".to_string());
@@ -1390,6 +1419,7 @@ async fn error_handling_wrong_credentials() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn verify_mirror_output_matches_source() {
     let mut ss = SqlServerConnector::new(sqlserver_config());
     let mut pg = PostgresConnector::new(postgres_config());
@@ -1464,6 +1494,7 @@ async fn verify_mirror_output_matches_source() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn verify_upsert_preserves_target_only_rows() {
     let mut ss = SqlServerConnector::new(sqlserver_config());
     let mut pg = PostgresConnector::new(postgres_config());
@@ -1539,6 +1570,7 @@ async fn verify_upsert_preserves_target_only_rows() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn migration_batching_with_live_data() {
     let mut ss = SqlServerConnector::new(sqlserver_config());
     ss.connect().await.expect("SQL Server connect");
@@ -1575,6 +1607,7 @@ async fn migration_batching_with_live_data() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 #[tokio::test]
+#[ignore]
 async fn plan_all_modes_all_shared_tables() {
     let mut ss = SqlServerConnector::new(sqlserver_config());
     let mut pg = PostgresConnector::new(postgres_config());

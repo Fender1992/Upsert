@@ -21,6 +21,12 @@ pub struct ConnectionRegistry {
     connections: HashMap<String, SharedConnector>,
 }
 
+impl Default for ConnectionRegistry {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ConnectionRegistry {
     pub fn new() -> Self {
         Self {
@@ -62,6 +68,12 @@ impl ConnectionRegistry {
 /// Holds active migration cancellation tokens.
 pub struct MigrationState {
     tokens: HashMap<String, CancellationToken>,
+}
+
+impl Default for MigrationState {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl MigrationState {

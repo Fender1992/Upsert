@@ -60,6 +60,12 @@ pub struct OllamaClient {
     base_url: String,
 }
 
+impl Default for OllamaClient {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl OllamaClient {
     pub fn new() -> Self {
         Self {

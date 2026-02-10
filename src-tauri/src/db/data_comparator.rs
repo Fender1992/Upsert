@@ -124,7 +124,7 @@ fn build_row_key(row: &Row, key_columns: &[String]) -> String {
         .iter()
         .map(|col| {
             row.get(col)
-                .map(|v| value_to_key_string(v))
+                .map(value_to_key_string)
                 .unwrap_or_else(|| "NULL".to_string())
         })
         .collect::<Vec<_>>()

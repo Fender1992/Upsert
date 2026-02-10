@@ -52,9 +52,9 @@ pub struct TypeMappingResult {
 /// Parse a native type string into base type and optional parameters.
 ///
 /// Examples:
-/// - "VARCHAR(255)" -> ("varchar", Some(255), None)
-/// - "DECIMAL(18,2)" -> ("decimal", Some(18), Some(2))
-/// - "INT" -> ("int", None, None)
+/// - `"VARCHAR(255)"` -> `("varchar", Some(255), None)`
+/// - `"DECIMAL(18,2)"` -> `("decimal", Some(18), Some(2))`
+/// - `"INT"` -> `("int", None, None)`
 pub fn parse_native_type(type_str: &str) -> (String, Option<u32>, Option<u32>) {
     let trimmed = type_str.trim().to_lowercase();
 
@@ -351,13 +351,12 @@ fn postgres_to_canonical(native: &str) -> CanonicalType {
         "point" | "line" | "lseg" | "box" | "path" | "polygon" | "circle" => {
             CanonicalType::Unknown(base)
         }
-        "bit" => CanonicalType::Binary(p1.map(|v| (v + 7) / 8).unwrap_or(1)),
-        "bit varying" | "varbit" => CanonicalType::Varbinary(p1.map(|v| (v + 7) / 8).unwrap_or(1)),
+        "bit" => CanonicalType::Binary(p1.map(|v| v.div_ceil(8)).unwrap_or(1)),
+        "bit varying" | "varbit" => CanonicalType::Varbinary(p1.map(|v| v.div_ceil(8)).unwrap_or(1)),
         _ => {
             // Handle array notation e.g. "integer[]"
             let trimmed = native.trim();
-            if trimmed.ends_with("[]") {
-                let inner = &trimmed[..trimmed.len() - 2];
+            if let Some(inner) = trimmed.strip_suffix("[]") {
                 let inner_canonical = postgres_to_canonical(inner);
                 CanonicalType::Array(Box::new(inner_canonical))
             } else {
@@ -439,7 +438,7 @@ fn mysql_to_canonical(native: &str) -> CanonicalType {
         "year" => CanonicalType::SmallInt,
         "json" => CanonicalType::Json,
         "enum" | "set" => CanonicalType::Varchar(255),
-        "bit" => CanonicalType::Binary(p1.map(|v| (v + 7) / 8).unwrap_or(1)),
+        "bit" => CanonicalType::Binary(p1.map(|v| v.div_ceil(8)).unwrap_or(1)),
         "geometry" | "point" | "linestring" | "polygon" | "multipoint" | "multilinestring"
         | "multipolygon" | "geometrycollection" => CanonicalType::Unknown(base),
         _ => CanonicalType::Unknown(native.to_string()),

@@ -162,7 +162,7 @@ impl CronSchedule {
     /// Parse the cron expression into its five component fields.
     /// Standard cron format: minute hour day-of-month month day-of-week
     pub fn parse_expression(&self) -> Result<CronFields, String> {
-        let parts: Vec<&str> = self.expression.trim().split_whitespace().collect();
+        let parts: Vec<&str> = self.expression.split_whitespace().collect();
         if parts.len() != 5 {
             return Err(format!(
                 "Cron expression must have 5 fields, got {}",

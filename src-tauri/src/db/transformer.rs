@@ -98,12 +98,12 @@ fn apply_rename_column(mut rows: Vec<Row>, from: &str, to: &str) -> Vec<Row> {
 /// Supported target types (case-insensitive): "string", "number", "boolean".
 ///
 /// Conversion rules:
-/// - **String**  : Number -> formatted string, Boolean -> "true"/"false",
-///                  Null -> "null", anything else -> JSON serialization.
-/// - **Number**  : String -> parse as f64, Boolean -> 0/1,
-///                  Null left as null.
-/// - **Boolean** : Number -> 0 = false / else true, String "true"/"false",
-///                  Null left as null.
+/// - **String**: Number -> formatted string, Boolean -> "true"/"false",
+///   Null -> "null", anything else -> JSON serialization.
+/// - **Number**: String -> parse as f64, Boolean -> 0/1,
+///   Null left as null.
+/// - **Boolean**: Number -> 0 = false / else true, String "true"/"false",
+///   Null left as null.
 ///
 /// On parse failure the value is left unchanged (no error, no panic).
 fn apply_type_cast(mut rows: Vec<Row>, column: &str, target_type: &str) -> Vec<Row> {

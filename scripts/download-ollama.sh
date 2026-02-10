@@ -9,7 +9,9 @@
 set -euo pipefail
 
 OLLAMA_VERSION="v0.6.2"
-BINDIR="$(cd "$(dirname "$0")/../src-tauri/binaries" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+mkdir -p "$SCRIPT_DIR/../src-tauri/binaries"
+BINDIR="$(cd "$SCRIPT_DIR/../src-tauri/binaries" && pwd)"
 
 # Detect or accept target triple
 if [ -n "${1:-}" ]; then
